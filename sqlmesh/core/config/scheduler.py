@@ -251,14 +251,20 @@ class MWAASchedulerConfig(_EngineAdapterStateSyncSchedulerConfig, BaseConfig):
         )
 
         if self.environment:
-            airflow_url, auth_token = url_and_auth_token_for_environment(self.environment)
+            airflow_url = url_and_auth_token_for_environment(self.environment)[0]
         else:
-            assert self.airflow_url and self.auth_token  # Make mypy happy
+            assert self.airflow_url  # Make mypy happy
             airflow_url = self.airflow_url
-            auth_token = self.auth_token
+
+        def get_auth_token(environment, auth_token):
+            if environment:
+                return url_and_auth_token_for_environment(environment)[1]
+            else:
+                assert auth_token  # Make mypy happy
+                return auth_token
 
         return MWAAPlanEvaluator(
-            client=MWAAClient(airflow_url, auth_token, console=context.console),
+            client=MWAAClient(airflow_url, get_auth_token, console=context.console),
             state_sync=context.state_sync,
             console=context.console,
             dag_run_poll_interval_secs=self.dag_run_poll_interval_secs,

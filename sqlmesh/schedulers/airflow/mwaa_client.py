@@ -13,13 +13,16 @@ from sqlmesh.utils.errors import NotFoundError
 
 
 class MWAAClient(BaseAirflowClient):
-    def __init__(self, airflow_url: str, auth_token: str, console: t.Optional[Console] = None):
+    def __init__(self, airflow_url: str, get_auth_token, console: t.Optional[Console] = None):
         super().__init__(airflow_url, console)
 
         self._session = Session()
         self._session.headers.update(
-            {"Authorization": f"Bearer {auth_token}", "Content-Type": "text/plain"}
+            {"Authorization": f"Bearer {get_auth_token()}", "Content-Type": "text/plain"}
         )
+
+        # Redo the above every 45 seconds before the token expires?
+        # Option to disable the follow-up for CI environments?
 
     def get_first_dag_run_id(self, dag_id: str) -> t.Optional[str]:
         dag_runs = self._list_dag_runs(dag_id)
